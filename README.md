@@ -64,6 +64,18 @@ The simulator runs the same loop as the Pi. Config changes in the settings page 
 - If the image is garbled or flickers, raise `hardware.gpio_slowdown` (default 2) in `config.json`.
 - `scripts/install.sh` disables onboard audio (the matrix library will not run with it loaded) and reserves CPU core 3 for the display.
 
+## Testing the Pi before the LED panel arrives
+
+You can check nearly everything with just the Pi and the bonnet fitted. Build the card first (see "Build the master SD image" below), then:
+
+1. **See the board in your browser.** Stop the panel service and run the display as a browser view that other machines can reach:
+   `sudo systemctl stop flightboard-display`, then `cd /opt/flightboard && sudo .venv/bin/python -m flightboard.display --simulate --host 0.0.0.0`.
+   Open `http://flightboard.local:8765` on your Mac. It's the same program and real aircraft, just drawn in the browser.
+2. **Try the settings page** at `http://flightboard.local`. Set a location and watch the browser view react.
+3. **Check the LED library works.** `sudo systemctl start flightboard-display`, then `journalctl -u flightboard-display -f`. You want to see `display started (matrix)` and no errors. Nothing lights up without a panel, but this proves the library built and the audio setting is right.
+4. **Power-cut test.** Pull the power and plug it back in. The settings should still be there and both services should come back by themselves.
+5. **Check the power supply holds up.** `vcgencmd get_throttled` should say `0x0`.
+
 ## If the panel looks wrong (first power-up)
 
 Run the test pattern on the Pi: `sudo systemctl stop flightboard-display && cd /opt/flightboard && sudo .venv/bin/python -m flightboard.display --test`. You should see a white border, TL/TR/BL/BR labels in the right corners, red/green/blue/white bars, a smooth grey ramp and a diagonal line. Then:
@@ -78,8 +90,8 @@ These extras are passed straight to the matrix library, which only applies them 
 ## Build the master SD image (once)
 
 1. Flash **Raspberry Pi OS Lite (Bookworm)** with Raspberry Pi Imager. In its settings: hostname `flightboard`, enable SSH, set a user/password, and set your own Wi-Fi so you can reach it.
-2. Boot the Pi, SSH in, and copy this folder across (`scp -r flight-board pi@flightboard.local:~`).
-3. `cd flight-board && sudo ./scripts/install.sh`, then `sudo reboot`.
+2. Boot the Pi and SSH in (`ssh <your-user>@flightboard.local`). Fetch the code: `git clone https://github.com/neilsayers/flight-tracker-led-board.git` (if git is missing, `sudo apt-get install -y git` first).
+3. `cd flight-tracker-led-board && sudo ./scripts/install.sh`, then `sudo reboot`. The install takes a while on a Pi because it compiles the LED library.
 4. Check it: the panels should show the boot screen with the hostname and IP, then `Set your location`. Open `http://flightboard.local`, type your town or postcode, save. Aircraft should appear within about 10 seconds if anything is overhead.
 5. Logos: `install.sh` downloads them (see "Airline logos" above). To add or replace one, put an `ICAO.png` file (e.g. `BAW.png`) in `/opt/flightboard/logos/`.
 6. When you're happy, run `sudo ./scripts/prepare-clone.sh`. It deletes the saved config, saved Wi-Fi networks and SSH host keys, resets the hostname, and shuts the Pi down.

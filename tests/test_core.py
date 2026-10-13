@@ -103,6 +103,27 @@ class Choosing(unittest.TestCase):
         self.assertEqual([a.hex for a in got], ["b"])
 
 
+class SimulatorServer(unittest.TestCase):
+    def test_serves_page_and_frames_and_can_listen_on_any_interface(self):
+        import urllib.request
+        from flightboard import display
+        from PIL import Image
+        out = display.SimOutput(0, "127.0.0.1")            # port 0: let the OS pick a free one
+        try:
+            base = f"http://127.0.0.1:{out.server.server_address[1]}"
+            self.assertIn(b"Flight Board simulator", urllib.request.urlopen(base + "/").read())
+            out.show(Image.new("RGB", (128, 64), (255, 0, 0)), 100)
+            png = urllib.request.urlopen(base + "/frame.png?dots=0").read()
+            self.assertEqual(png[:4], b"\x89PNG")
+        finally:
+            out.close()
+        wide = display.SimOutput(0, "0.0.0.0")             # what --host 0.0.0.0 does: reachable from other machines
+        try:
+            self.assertEqual(wide.server.server_address[0], "0.0.0.0")
+        finally:
+            wide.close()
+
+
 class Rotation(unittest.TestCase):
     """The between-polls tick that makes the dwell time accurate."""
 

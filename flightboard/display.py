@@ -3,7 +3,7 @@
   sudo python -m flightboard.display            # on the Pi (needs root for the matrix)
   sudo python -m flightboard.display --test     # Pi: test pattern for first power-up
   python -m flightboard.display --preview       # on a Mac: writes out/display.png about once a second
-  python -m flightboard.display --simulate [--demo]   # on a Mac: live view at http://localhost:8765
+  python -m flightboard.display --simulate [--demo]   # live view at http://localhost:8765 (add --host 0.0.0.0 to view from another machine)
 """
 from __future__ import annotations
 
@@ -207,7 +207,7 @@ setInterval(()=>{f.src='/frame.png?dots='+(d.checked?1:0)+'&t='+Date.now()},100)
 class SimOutput:
     """Serves the live frame to a browser at http://localhost:PORT. Same loop as the real thing."""
 
-    def __init__(self, port: int):
+    def __init__(self, port: int, host: str = "127.0.0.1"):
         import http.server, io
 
         outer = self
@@ -232,9 +232,9 @@ class SimOutput:
             def log_message(self, *a):
                 pass
 
-        self.server = http.server.ThreadingHTTPServer(("127.0.0.1", port), H)
+        self.server = http.server.ThreadingHTTPServer((host, port), H)
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
-        log.info("simulator at http://localhost:%d", port)
+        log.info("simulator at http://%s:%d", "localhost" if host == "127.0.0.1" else host, self.server.server_address[1])
 
     def show(self, img: Image.Image, brightness: int):
         self.raw = img.point(lambda v: int(v * brightness / 100))
@@ -323,6 +323,7 @@ def main(argv=None):
     ap.add_argument("--demo", action="store_true", help="with --simulate: cycle sample aircraft instead of live data")
     ap.add_argument("--test", action="store_true", help="show a hardware test pattern and nothing else")
     ap.add_argument("--port", type=int, default=8765)
+    ap.add_argument("--host", default="127.0.0.1", help="with --simulate: 0.0.0.0 lets other machines on your network view it")
     ap.add_argument("--config", type=Path, default=config.DEFAULT_PATH)
     args = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -334,7 +335,7 @@ def main(argv=None):
 
     cfg = cfg_box["cfg"]
     if args.simulate:
-        out = SimOutput(args.port)
+        out = SimOutput(args.port, args.host)
     elif args.preview:
         out = PreviewOutput(Path("out/display.png"))
     else:
