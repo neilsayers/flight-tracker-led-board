@@ -1,8 +1,43 @@
 # Flight Board
 
-An LED display that shows the nearest aircraft overhead: airline logo, airline, flight number and route, aircraft type, departure/destination with ETA, altitude and speed. 2x 64x64 HUB75 panels (128x64) on a Raspberry Pi Zero 2 W with an Adafruit RGB Matrix Bonnet.
+A little LED sign that shows the aircraft flying over your house. It picks up the planes near you, works out who is flying them and where they're going, and shows it on a 128x64 LED panel, with a phone-friendly settings page. It runs on a Raspberry Pi, and you can try the whole thing on a Mac first.
 
-Data comes from adsb.lol (aircraft), adsbdb.com (route/airline) postcodes.io (postcode to lat/lon) and OpenStreetMap Nominatim (place names like "Omagh"). No API keys.
+![Sample screens: an airliner, a tracked flight with progress bar, a police helicopter, a military jet, a glider, a balloon, a milestone and the clock](docs/preview.png)
+
+*These pictures are drawn by the project's own code. The real panel shows airline logos where it has them, and you download those separately (see below).*
+
+## What it does
+
+- **Nearby aircraft:** logo, airline, flight number and route, aircraft type, departure and destination with an ETA, altitude and speed. It rotates through the nearest few, every 10, 20 or 30 seconds.
+- **Track a flight:** type a flight number such as `BA11` and the board follows it from take-off to landing, with a progress bar along the bottom.
+- **Knows what it's looking at:** helicopters, gliders, balloons, airships, drones, private jets, light planes and fighters each get their own icon. Military aircraft are green with an emblem, and police, coastguard and air ambulance helicopters are labelled.
+- **Personal touches:** a greeting, "Good morning, Sam", birthday, Christmas, Mother's Day and Father's Day messages, gold alerts for rare aircraft like the A380, and a "You've spotted 100 planes!" milestone counter.
+- **Easy to run:** settings page for location (a town name or postcode), brightness, units, night dimming, Wi-Fi and the above. It keeps running if the internet drops, and it restarts itself after a crash or power cut.
+- **No API keys, no accounts.**
+
+## What you need (per board)
+
+- A 128x64 HUB75 LED panel, 2.5 mm pitch: either one 128x64 board or two 64x64 panels chained
+- A Raspberry Pi (a Zero 2 W, 3A+ or 3B+ is ideal; a Pi 4 works but needs a higher GPIO slowdown)
+- An Adafruit RGB Matrix Bonnet, with the GPIO 4 to 18 mod for flicker-free output
+- A 5V 8-10A power supply (it can power both the panel and the Pi)
+- A microSD card; optionally a diffuser and a frame
+
+The hardware notes and the first power-up checks are further down.
+
+## How it fits together
+
+| Part | What it does |
+| --- | --- |
+| `flightboard/display.py` | The program that runs on the Pi: fetches aircraft, draws frames, drives the panel (or a browser simulator) |
+| `flightboard/web.py` | The settings page (Flask) |
+| `flightboard/render.py` | Draws every screen with Pillow, with no hardware needed |
+| `flightboard/data.py`, `tracker.py` | Fetching aircraft and routes, and following a single flight |
+| `flightboard/kinds.py`, `easter.py` | What kind of aircraft something is, and the personal touches |
+| `deploy/`, `scripts/` | systemd services, install and cloning scripts for the Pi |
+| `tests/` | Unit tests: `python3 -m unittest discover -s tests -t .` |
+
+The display and the settings page are separate programs that share one `config.json`.
 
 ## Airline logos
 
@@ -93,3 +128,19 @@ The Wi-Fi form on the settings page switches the board to a new network using Ne
 - The ETA is the straight-line distance to the destination at current ground speed, shown as a clock time in the board's local time. Treat it as a guide.
 - Fonts in `flightboard/fonts/` are the X11 misc-fixed fonts (public domain), converted for Pillow with `scripts/make_fonts.py`.
 - Airline logos belong to the airlines. They came from the public GitHub collection Jxck-S/airline-logos. Don't publish the `logos/` folder.
+
+## Credits and data
+
+- Aircraft positions: [adsb.lol](https://adsb.lol) and [adsb.fi](https://adsb.fi) open data (community ADS-B receivers)
+- Routes, airlines and aircraft details: [adsbdb.com](https://www.adsbdb.com)
+- Postcodes: [postcodes.io](https://postcodes.io)
+- Place search: [OpenStreetMap](https://www.openstreetmap.org/copyright) Nominatim. Map data © OpenStreetMap contributors
+- LED driving: [hzeller/rpi-rgb-led-matrix](https://github.com/hzeller/rpi-rgb-led-matrix) (used at run time on the Pi, not included here)
+- Fonts: the X11 "misc-fixed" bitmap fonts by Markus Kuhn, which are in the public domain
+- Airline logos: from the public [Jxck-S/airline-logos](https://github.com/Jxck-S/airline-logos) collection. They belong to the airlines, so they aren't in this repository.
+
+Be kind to the free services: the board polls every few seconds and caches what it looks up. If you run a lot of boards, please keep it that way.
+
+## Licence
+
+The code is released under the [MIT licence](LICENSE). The airline logos and the data sources above have their own terms.
