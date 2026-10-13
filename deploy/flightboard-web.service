@@ -1,0 +1,15 @@
+[Unit]
+Description=Flight Board settings page
+After=network.target
+
+[Service]
+# Root so it can bind port 80 and change Wi-Fi via nmcli.
+User=root
+WorkingDirectory=/opt/flightboard
+Environment=FLIGHTBOARD_CONFIG=/opt/flightboard/config.json
+ExecStart=/opt/flightboard/.venv/bin/python -m flightboard.web
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,17 @@
+[Unit]
+Description=Flight Board LED display
+After=local-fs.target
+
+[Service]
+# Root is required for the matrix library. Starts without waiting for the network:
+# the board shows its boot screen and then "Scanning..." until Wi-Fi arrives.
+User=root
+WorkingDirectory=/opt/flightboard
+Environment=FLIGHTBOARD_CONFIG=/opt/flightboard/config.json
+ExecStart=/opt/flightboard/.venv/bin/python -m flightboard.display
+Restart=always
+RestartSec=3
+Nice=-5
+
+[Install]
+WantedBy=multi-user.target

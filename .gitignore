@@ -1,0 +1,16 @@
+# personal settings and runtime state: never commit these
+config.json
+state.json
+track.json
+out/
+
+# airline logos are the airlines' trademarks: fetch them with scripts/fetch-logos.sh, don't publish them
+logos/*.png
+
+# private project brief
+HANDOFF.md
+
+__pycache__/
+*.pyc
+.venv/
+.DS_Store

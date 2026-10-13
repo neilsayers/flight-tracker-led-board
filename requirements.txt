@@ -1,0 +1,4 @@
+# Mac (preview/simulator/tests): pip install -r requirements.txt
+# On the Pi, scripts/install.sh installs Pillow and Flask from apt and builds rgbmatrix from source.
+Pillow>=10
+Flask>=3
